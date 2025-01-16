@@ -4,6 +4,9 @@ django-cors-headers==4.3.1
 django-stubs==4.2.7
 djangorestframework==3.14.0
 
+# Image Processing
+Pillow==10.2.0  # Para ImageField
+
 # Development tools
 pylint-django==2.5.5
 python-dotenv==1.0.0

@@ -40,7 +40,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'accounts',
     'rest_framework',
-    'corshreaders',
+    'corsheaders',
+    'healthy_check',
 ]
 
 MIDDLEWARE = [
