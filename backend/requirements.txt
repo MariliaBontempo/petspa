@@ -1,0 +1,12 @@
+# Django and extensions
+Django==5.0.2
+django-cors-headers==4.3.1
+django-stubs==4.2.7
+djangorestframework==3.14.0
+
+# Development tools
+pylint-django==2.5.5
+python-dotenv==1.0.0
+
+# Database
+psycopg2-binary==2.9.9
