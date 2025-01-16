@@ -85,7 +85,7 @@ class StaffProfile(models.Model):
     )
     # Use string reference to avoid circular imports
     skills = models.ManyToManyField(
-        'Skill',
+        'VetSkills',
         blank=True,
         related_name='staff_members'
     )
@@ -132,18 +132,22 @@ class Pet(models.Model):
     )
 
 class TutorProfile(models.Model):
-    user=models.OneToOneField(
+    user = models.OneToOneField(
         User,
         on_delete=models.CASCADE,
         related_name='tutor_profile',
     )
-    pets = models.OneToManyField(
-        Pet,
-        related_name='tutor_profile',
-    )
+
+    def clean(self):
+        if self.user.user_type != 'tutor':
+            raise ValidationError('Apenas tutores podem ter um perfil de tutor.')
 
     def __str__(self):
-        return f'{self._get_full_name()}: {self.get_user_type()}'
+        return f'Perfil de {self.user.get_full_name()}'
+    
+    # Método helper para acessar os pets do tutor
+    def get_pets(self):
+        return self.user.pets.all()
 
     class Meta:
-        ordering=['user_first_name']
+        ordering = ['user__first_name']
