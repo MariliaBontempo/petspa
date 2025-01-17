@@ -14,13 +14,14 @@ class User(AbstractUser):
     )
     
     # Basic user fields with clear constraints
+    email = models.EmailField(unique=True)
     user_type = models.CharField(
         max_length=10,
         choices=USER_TYPE_CHOICES,
         default='tutor'
     )
-    phone = models.CharField(max_length=20)
-    address = models.TextField()
+    phone = models.CharField(max_length=20, blank=True, null=True)
+    address = models.TextField(blank=True, null=True)
     profile_picture = models.ImageField(
         upload_to='profile_pics/',
         blank=True,  # Optional in forms
