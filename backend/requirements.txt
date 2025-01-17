@@ -24,3 +24,7 @@ python-dotenv==1.0.0
 
 # Database
 psycopg2-binary==2.9.9
+
+# Testing
+pytest==7.4.4
+pytest-django==4.7.0

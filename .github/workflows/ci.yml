@@ -37,7 +37,7 @@ jobs:
     
     - name: Run Tests
       run: |
-        docker-compose exec -T backend python manage.py test
+        docker-compose exec -T backend pytest
     
     - name: Check Logs
       if: always()
