@@ -1,7 +1,11 @@
-import pytest
-from graphene_django.utils.testing import GraphQLTestCase
+from django.test import TestCase
+from graphene.test import Client
+from config.schema import schema
 
-class TestHealthCheck(GraphQLTestCase):
+class TestHealthCheck(TestCase):
+    def setUp(self):
+        self.client = Client(schema)
+
     def test_graphql_healthcheck(self):
         query = '''
         query {
@@ -10,9 +14,7 @@ class TestHealthCheck(GraphQLTestCase):
             }
         }
         '''
-        response=self.query(query)
+        response = self.client.execute(query)
         
-        self.assertResponseNoErrors(response)
-        content=response.json()
-        self.assertEqual(content['data']['healthCheck']['status'], 'ok')
-        
+        self.assertNotIn('errors', response)
+        self.assertEqual(response['data']['healthCheck']['status'], 'ok')
