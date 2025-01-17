@@ -1,10 +1,11 @@
 import graphene
-import accounts.schema
+from accounts.schema import Mutation as AccountsMutation
+from healthy_check.schema import Query as HealthCheckQuery
 
-class Query(accounts.schema.Query, graphene.ObjectType):
+class Query(HealthCheckQuery, graphene.ObjectType):
     pass
 
-class Mutation(accounts.schema.Mutation, graphene.ObjectType):
+class Mutation(AccountsMutation, graphene.ObjectType):
     pass
 
 schema = graphene.Schema(query=Query, mutation=Mutation) 

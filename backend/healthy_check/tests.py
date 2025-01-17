@@ -1,10 +1,18 @@
 import pytest
-from django.urls import reverse
-from rest_framework.test import APIClient
+from graphene_django.utils.testing import GraphQLTestCase
 
-@pytest.mark.django_db
-def test_frontend_backend_health():
-    client = APIClient()
-    url = reverse('frontend_backend_health')
-    response = client.get(url)
-    assert response.status_code == 200
+class TestHealthCheck(GraphQLTestCase):
+    def test_graphql_healthcheck(self):
+        query = '''
+        query {
+            healthCheck {
+                status
+            }
+        }
+        '''
+        response=self.query(query)
+        
+        self.assertResponseNoErrors(response)
+        content=response.json()
+        self.assertEqual(content['data']['healthCheck']['status'], 'ok')
+        
