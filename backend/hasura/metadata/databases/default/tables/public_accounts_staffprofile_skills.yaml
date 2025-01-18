@@ -1,0 +1,3 @@
+table:
+  name: accounts_staffprofile_skills
+  schema: public

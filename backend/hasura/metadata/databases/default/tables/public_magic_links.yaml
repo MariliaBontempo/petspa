@@ -1,0 +1,50 @@
+table:
+  name: magic_links
+  schema: public
+insert_permissions:
+  - role: public
+    permission:
+      check: {}
+      columns:
+        - email
+        - user_type
+    comment: ""
+select_permissions:
+  - role: public
+    permission:
+      columns:
+        - created_at
+        - email
+        - expires_at
+        - id
+        - token
+        - used
+        - user_type
+      filter: {}
+    comment: ""
+  - role: user
+    permission:
+      columns:
+        - created_at
+        - email
+        - expires_at
+        - id
+        - token
+        - used
+        - user_type
+      filter:
+        email:
+          _eq: X-Hasura-User-Email
+    comment: ""
+update_permissions:
+  - role: user
+    permission:
+      columns:
+        - used
+      filter:
+        email:
+          _eq: X-Hasura-User-Email
+        used:
+          _eq: false
+      check: null
+    comment: ""

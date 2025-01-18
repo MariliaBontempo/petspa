@@ -1,0 +1,3 @@
+table:
+  name: django_admin_log
+  schema: public

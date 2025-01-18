@@ -1,0 +1,3 @@
+table:
+  name: accounts_user_groups
+  schema: public
