@@ -1,42 +1,42 @@
-version: '3.8'
+version: '3'
 
 services:
-  backend:
-    build: 
-      context: ./backend
-      dockerfile: Dockerfile
+  db:
+    image: postgres:13
+    env_file:
+      - ./backend/.env
     ports:
-      - "8000:8000"
+      - "5432:5432"
     volumes:
-      - ./backend:/app
-    environment:
-      - PYTHONUNBUFFERED=1
-      - FRONTEND_URL=http://localhost:5173
-    depends_on:
-      - redis
-    command: python manage.py runserver 0.0.0.0:8000
-
-  frontend:
-    build: 
-      context: ./frontend
-      dockerfile: Dockerfile
-    ports:
-      - "5173:5173"
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-    environment:
-      - VITE_API_URL=http://localhost:8000
-    command: yarn dev --host
+      - postgres_data:/var/lib/postgresql/data
 
   redis:
-    build: 
-      context: ./redis
-      dockerfile: Dockerfile
+    image: redis
     ports:
       - "6379:6379"
+
+  backend:
+    build: ./backend
+    command: python manage.py runserver 0.0.0.0:8000
     volumes:
-      - redis_data:/data
+      - ./backend:/app
+    env_file: ./backend/.env
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+      - redis
+
+  graphql-engine:
+    image: hasura/graphql-engine:latest
+    ports:
+      - "8080:8080"
+    env_file: ./backend/.env
+    environment:
+       - HASURA_GRAPHQL_ENABLE_CONSOLE=true
+    depends_on:
+      - db
+    restart: always 
 
 volumes:
-  redis_data: 
+  postgres_data: 

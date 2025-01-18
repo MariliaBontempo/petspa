@@ -9,17 +9,22 @@ import os
 from dotenv import load_dotenv
 from django.core.mail import send_mail
 import graphql_jwt
+from graphql_jwt.shortcuts import get_token
 from django.conf import settings
+from django.contrib.auth.decorators import login_required
+import logging
+import sys
+from datetime import datetime
 
 load_dotenv()
 FRONTEND_URL = os.environ['FRONTEND_URL']
+logger = logging.getLogger('accounts')
 
 # Define GraphQL type for User model
 class UserType(DjangoObjectType):
     class Meta:
         model = User
-        #(no password exposed)
-        fields = ('id','email','user_type','phone','address')
+        fields = ('id', 'email', 'user_type')
 
 #Mutation for checking the usertype
 class CheckUserType(graphene.Mutation):
@@ -66,13 +71,8 @@ class RequestMagicLinkLogin(graphene.Mutation):
                 )
             
             token = str(uuid.uuid4())
-            cache.set(f'magic_link_{token}', email, timeout=3600)
+            cache.set(f'magic_link_{token}', email, timeout=300)
             
-            # Verificar se o token foi salvo
-            saved_email = cache.get(f'magic_link_{token}')
-            print(f"Token salvo para: {saved_email}")
-            
-            # Enviar email
             send_mail(
                 subject='Your Magic Login Link',
                 message=f'Click here to login: {settings.FRONTEND_URL}/auth/{token}',
@@ -86,7 +86,6 @@ class RequestMagicLinkLogin(graphene.Mutation):
                 message=f'Magic link sent to {email}'
             )
         except Exception as e:
-            print(f"Erro: {str(e)}")
             return RequestMagicLinkLogin(
                 success=False,
                 message=f'Error: {str(e)}'
@@ -94,27 +93,30 @@ class RequestMagicLinkLogin(graphene.Mutation):
 class VerifyMagicLinkAndGenerateJWT(graphene.Mutation):
     class Arguments:
         token = graphene.String(required=True)
-    
+
     success = graphene.Boolean()
     jwt_token = graphene.String()
     message = graphene.String()
 
     def mutate(self, info, token):
+        # Check token in Redis
         email = cache.get(f'magic_link_{token}')
-        
         if not email:
             return VerifyMagicLinkAndGenerateJWT(
                 success=False,
-                message='Invalid or expired magic link'
+                message="Invalid or expired token"
             )
+
+        # Get or create user
+        user = User.objects.get_or_create(email=email)[0]
         
-        user = User.objects.get(email=email)
-        jwt_token = graphql_jwt.shortcuts.get_token(user)
+        # Generate JWT
+        jwt_token = get_token(user)
         
         return VerifyMagicLinkAndGenerateJWT(
             success=True,
             jwt_token=jwt_token,
-            message='JWT token generated successfully'
+            message="Login successful"
         )
 
 class TestRedisConnection(graphene.Mutation):
@@ -159,11 +161,27 @@ class Mutation(graphene.ObjectType):
 
 class Query(graphene.ObjectType):
     me = graphene.Field(UserType)
-    def resolve_me(self,info):
-        user = info.context.user
-        if user.is_authenticated:
-            return user
-        raise Exception('Authentication failed')
+    
+    @login_required
+    def resolve_me(self, info):
+        # Usar print e sys.stdout.flush()
+        print("\n=== DEBUG START ===", file=sys.stdout, flush=True)
+        print(f"Info: {info}", file=sys.stdout, flush=True)
+        print(f"Context: {info.context}", file=sys.stdout, flush=True)
+        
+        try:
+            user = info.context.user
+            print(f"User: {user}", file=sys.stdout, flush=True)
+            print(f"Is Auth: {user.is_authenticated}", file=sys.stdout, flush=True)
+            
+            if user.is_authenticated:
+                return user
+                
+        except Exception as e:
+            print(f"Error: {str(e)}", file=sys.stderr, flush=True)
+            
+        print("=== DEBUG END ===\n", file=sys.stdout, flush=True)
+        return None
 
 
 #  1. Check type

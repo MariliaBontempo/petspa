@@ -28,6 +28,9 @@ class User(AbstractUser):
         null=True    # Optional in database
     )
 
+    USERNAME_FIELD = 'email'  # Usar email como campo de identificação
+    REQUIRED_FIELDS = ['username']  # Remove email daqui se estiver
+
     class Meta:
         # Optimize common queries with indexes
         ordering = ['first_name', 'last_name']

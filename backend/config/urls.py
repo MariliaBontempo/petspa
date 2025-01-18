@@ -18,9 +18,11 @@ from django.contrib import admin
 from django.urls import path,include
 from graphene_django.views import GraphQLView
 from django.views.decorators.csrf import csrf_exempt
+from accounts.api import request_magic_link
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('healthy_check.urls')),
     path('graphql/', csrf_exempt(GraphQLView.as_view(graphiql=True))),
+    path('api/auth/request-magic-link/', request_magic_link),
 ]

@@ -13,10 +13,10 @@ redis==5.0.1
 django-redis==5.4.0
 
 # Email
-django-anymail==10.2  # Para emails em produção
+django-anymail==10.2 
 
 # Image Processing
-Pillow==10.2.0  # Para ImageField
+Pillow==10.2.0  # For ImageField
 
 # Development tools
 pylint-django==2.5.5
