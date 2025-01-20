@@ -1,6 +1,7 @@
-version: '3'
+version: '3.8'
 
 services:
+  # Database
   db:
     image: postgres:13
     env_file:
@@ -10,13 +11,55 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  # Cache
   redis:
-    image: redis
+    image: redis:alpine
     ports:
       - "6379:6379"
 
+  # Message Broker
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_OFFSETS_TOPIC_NUM_PARTITIONS: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics --bootstrap-server localhost:9092 --list"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  topic-creator:
+    image: confluentinc/cp-kafka:latest
+    depends_on:
+      kafka:
+        condition: service_healthy
+    command: >
+      bash -c "
+        kafka-topics --bootstrap-server kafka:9092 --create --topic magic-links.created --partitions 1 --replication-factor 1
+      "
+
+  # Backend (Django + Event Broker)
   backend:
-    build: ./backend
+    build: 
+      context: .
+      dockerfile: Dockerfile
     command: python manage.py runserver 0.0.0.0:8000
     volumes:
       - ./backend:/app
@@ -25,18 +68,60 @@ services:
       - "8000:8000"
     depends_on:
       - db
+      - kafka
       - redis
 
+  # Hasura GraphQL Engine
   graphql-engine:
     image: hasura/graphql-engine:latest
     ports:
       - "8080:8080"
     env_file: ./backend/.env
     environment:
-       - HASURA_GRAPHQL_ENABLE_CONSOLE=true
+      HASURA_GRAPHQL_ENABLE_CONSOLE: "true"
+      HASURA_GRAPHQL_DEV_MODE: "true"
     depends_on:
       - db
-    restart: always 
+      - backend
+
+  # Monitoring Tools
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    ports:
+      - "8081:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+    depends_on:
+      - kafka
+
+  # Kafka Topic Setup
+  # kafka-setup:
+  #   build: 
+  #     context: .
+  #     dockerfile: Dockerfile
+  #   command: python kafka/setup.py
+  #   volumes:
+  #     - ./backend:/app
+  #   env_file: ./backend/.env
+  #   depends_on:
+  #     kafka:
+  #       condition: service_healthy
+
+  # Email Service
+  email-service:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    command: python services/email/consumer.py
+    volumes:
+      - ./backend:/app
+    env_file: ./backend/.env
+    depends_on:
+      topic-creator:
+        condition: service_completed_successfully
 
 volumes:
-  postgres_data: 
+  postgres_data:
+  prometheus_data:
+  grafana_data: 

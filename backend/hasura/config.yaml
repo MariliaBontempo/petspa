@@ -1,5 +1,5 @@
 version: 3
 endpoint: http://localhost:8080
-admin_secret: ${HASURA_GRAPHQL_ADMIN_SECRET}
+admin_secret: h4sur4_4dm1n_s3cr3t_k3y_2024_p3tsp4
 metadata_directory: metadata
 migrations_directory: migrations

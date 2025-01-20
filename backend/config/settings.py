@@ -50,6 +50,8 @@ INSTALLED_APPS = [
     'healthy_check',
     'graphene_django',
     'graphql_jwt.refresh_token.apps.RefreshTokenConfig',
+    'event_broker',
+    'event_broker.apps.EventBrokerConfig',
 ]
 
 MIDDLEWARE = [
